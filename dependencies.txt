@@ -1,0 +1,3 @@
+Starting a Gradle Daemon, 1 incompatible Daemon could not be reused, use --status for details
+Calculating task graph as no configuration cache is available for tasks: dependencies
+Configuration cache entry stored.

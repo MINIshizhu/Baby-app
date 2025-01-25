@@ -1,0 +1,241 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+    id 'kotlin-kapt'
+    id 'dagger.hilt.android.plugin'
+    id 'kotlin-parcelize'
+    id 'jacoco'
+}
+
+android {
+    namespace 'com.example.babycare'
+    compileSdk 34
+
+    signingConfigs {
+        def keystorePropertiesFile = rootProject.file("keystore.properties")
+        def keystoreProperties = new Properties()
+
+        if (keystorePropertiesFile.exists()) {
+            keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+            
+            release {
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+        
+        debug {
+            storeFile file("../keystore/debug.keystore")
+            storePassword "android"
+            keyAlias "androiddebugkey"
+            keyPassword "android"
+        }
+    }
+
+    defaultConfig {
+        applicationId "com.example.babycare"
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "com.example.babycare.HiltTestRunner"
+        vectorDrawables {
+            useSupportLibrary true
+        }
+
+        // 自定义 BuildConfig 字段
+        buildConfigField "String", "BUILD_TIME", "\"${new Date().format('yyyy-MM-dd HH:mm:ss')}\""
+        buildConfigField "String", "GIT_HASH", "\"unknown\""
+    }
+
+    buildTypes {
+        debug {
+            applicationIdSuffix ".debug"
+            debuggable true
+            signingConfig signingConfigs.debug
+            minifyEnabled false
+            shrinkResources false
+            testCoverageEnabled true
+        }
+        release {
+            minifyEnabled false
+            shrinkResources false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+            testCoverageEnabled false
+        }
+    }
+
+    buildFeatures {
+        compose true
+        buildConfig true  // 确保启用 buildConfig 功能
+    }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = compose_compiler_version
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = '17'
+        freeCompilerArgs += [
+            "-opt-in=kotlin.RequiresOptIn",
+            "-Xjvm-default=all",
+            "-P",
+            "plugin:androidx.compose.compiler.plugins.kotlin:suppressKotlinVersionCompatibilityCheck=true"
+        ]
+    }
+
+    packagingOptions {
+        resources {
+            excludes += '/META-INF/{AL2.0,LGPL2.1}'
+        }
+    }
+
+    flavorDimensions "version"
+    productFlavors {
+        free {
+            dimension "version"
+            applicationIdSuffix ".free"
+            versionNameSuffix "-free"
+        }
+        pro {
+            dimension "version"
+            applicationIdSuffix ".pro"
+            versionNameSuffix "-pro"
+        }
+    }
+
+    productFlavors.all { flavor ->
+        if (flavor.name == 'pro') {
+            flavor.signingConfig = signingConfigs.release
+        } else {
+            flavor.signingConfig = signingConfigs.debug
+        }
+    }
+
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+            returnDefaultValues = true
+            all {
+                jacoco {
+                    includeNoLocationClasses = true
+                    excludes = ['jdk.internal.*']
+                }
+            }
+        }
+        execution 'ANDROIDX_TEST_ORCHESTRATOR'
+        animationsDisabled true
+    }
+
+    sourceSets {
+        main {
+            java.srcDirs = [
+                'src/main/java',
+                'src/main/kotlin'
+            ]
+            res.srcDirs = ['src/main/res']
+            manifest.srcFile 'src/main/AndroidManifest.xml'
+        }
+        
+        test {
+            java.srcDirs = ['src/test/java']
+            resources.srcDirs = ['src/test/resources']
+        }
+        
+        androidTest {
+            java.srcDirs = ['src/androidTest/java']
+            resources.srcDirs = ['src/androidTest/resources']
+        }
+        
+        free {
+            java.srcDirs = ['src/free/java']
+            res.srcDirs = ['src/free/res']
+            manifest.srcFile 'src/free/AndroidManifest.xml'
+        }
+        
+        pro {
+            java.srcDirs = ['src/pro/java']
+            res.srcDirs = ['src/pro/res']
+            manifest.srcFile 'src/pro/AndroidManifest.xml'
+        }
+        
+        debug {
+            java.srcDirs = ['src/debug/java']
+            res.srcDirs = ['src/debug/res']
+            manifest.srcFile 'src/debug/AndroidManifest.xml'
+        }
+        
+        release {
+            java.srcDirs = ['src/release/java']
+            res.srcDirs = ['src/release/res']
+            manifest.srcFile 'src/release/AndroidManifest.xml'
+        }
+    }
+
+    kapt {
+        correctErrorTypes true
+        useBuildCache false
+        arguments {
+            arg("dagger.hilt.disableModulesHaveInstallInCheck", "true")
+            arg("room.schemaLocation", "$projectDir/schemas")
+            arg("room.incremental", "true")
+            arg("room.expandProjection", "true")
+        }
+        javacOptions {
+            option("-Xmaxerrs", 500)
+        }
+    }
+
+    hilt {
+        enableAggregatingTask = true
+        enableExperimentalClasspathAggregation = true
+    }
+}
+
+dependencies {
+    def composeBom = platform("androidx.compose:compose-bom:$compose_bom_version")
+    implementation composeBom
+    androidTestImplementation composeBom
+
+    implementation "androidx.core:core-ktx:$core_ktx_version"
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycle_version"
+    implementation "androidx.activity:activity-compose:$activity_compose_version"
+    implementation "androidx.appcompat:appcompat:1.6.1"
+    implementation 'androidx.compose.ui:ui'
+    implementation 'androidx.compose.ui:ui-graphics'
+    implementation 'androidx.compose.ui:ui-tooling-preview'
+    implementation 'androidx.compose.material3:material3'
+    implementation 'androidx.compose.material:material-icons-extended'
+    implementation "androidx.navigation:navigation-compose:$navigation_compose_version"
+    implementation "com.google.dagger:hilt-android:$hilt_version"
+    kapt "com.google.dagger:hilt-android-compiler:$hilt_version"
+    implementation "androidx.hilt:hilt-navigation-compose:$hilt_navigation_compose_version"
+    implementation "androidx.room:room-runtime:$room_version"
+    kapt "androidx.room:room-compiler:$room_version"
+    implementation "io.coil-kt:coil-compose:$coil_version"
+    implementation "androidx.work:work-runtime-ktx:$work_version"
+    implementation "androidx.datastore:datastore-preferences:1.0.0"
+    implementation 'com.google.accompanist:accompanist-permissions:0.32.0'
+    implementation 'com.opencsv:opencsv:5.7.1'
+    implementation 'com.itextpdf:itext7-core:7.2.5'
+    implementation "org.jetbrains.kotlinx:kotlinx-datetime:0.4.1"
+    implementation "com.github.lecho:hellocharts-library:1.5.8@aar"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+}
+
+tasks.withType(Test) {
+    jacoco {
+        includeNoLocationClasses = true
+        excludes = ['jdk.internal.*']
+    }
+}

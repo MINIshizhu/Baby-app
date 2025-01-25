@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Baby Care</string>
+    <!-- 其他字符串资源 -->
+    <!-- 错误消息 -->
+    <string name="error_network">网络连接错误</string>
+    <string name="error_database">数据库操作错误</string>
+    <string name="error_validation">验证错误: %1$s</string>
+    <string name="error_unknown">未知错误</string>
+    <string name="error_permission">缺少必要权限</string>
+    
+    <!-- 提示消息 -->
+    <string name="msg_record_saved">记录已保存</string>
+    <string name="msg_record_deleted">记录已删除</string>
+    <string name="msg_backup_success">备份成功</string>
+    <string name="msg_restore_success">恢复成功</string>
+</resources> 
